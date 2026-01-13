@@ -75,6 +75,9 @@ interface WindowStats {
 - `cleanTabs(cleanAllWindows)`: 主清理逻辑
 - `cleanWindowTabs(windowId)`: 清理指定窗口的重复标签页
 - `updateTabStats()`: 更新标签页统计
+- `updateLastCleanTime()`: 更新上次清理时间显示
+- `saveLastCleanTime()`: 保存清理时间到本地存储
+- `formatRelativeTime(timestamp)`: 格式化相对时间显示
 - `showResult(message, type)`: 显示操作结果
 
 ### 2. 重复检测逻辑 (Duplicate Detection Logic)
@@ -147,6 +150,11 @@ interface CleanupSession {
   duplicatesFound: number;
   tabsClosed: number;
   errors: string[];
+}
+
+// 存储数据模型
+interface StorageData {
+  lastCleanTime: number; // 上次清理时间戳
 }
 ```
 

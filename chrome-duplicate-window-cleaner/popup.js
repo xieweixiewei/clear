@@ -5,9 +5,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const cleanAllBtn = document.getElementById('cleanAllBtn');
     const resultDiv = document.getElementById('result');
     const statsDiv = document.getElementById('stats');
+    const lastCleanDiv = document.getElementById('lastClean');
 
-    // 显示当前窗口统计
+    // 显示当前窗口统计和上次清理时间
     updateTabStats();
+    updateLastCleanTime();
 
     // 清理当前窗口按钮
     cleanCurrentBtn.addEventListener('click', async function() {
@@ -55,7 +57,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             showResult(message, 'success');
             
+            // 记录清理时间
             if (totalTabsClosed > 0) {
+                await saveLastCleanTime();
+                updateLastCleanTime();
+                
                 setTimeout(() => {
                     window.close();
                 }, 2000);
@@ -169,5 +175,58 @@ document.addEventListener('DOMContentLoaded', function() {
         resultDiv.textContent = message;
         resultDiv.className = 'result ' + type;
         resultDiv.style.display = 'block';
+    }
+
+    // 保存最后清理时间
+    async function saveLastCleanTime() {
+        try {
+            await chrome.storage.local.set({
+                lastCleanTime: Date.now()
+            });
+        } catch (error) {
+            console.warn('无法保存清理时间:', error);
+        }
+    }
+
+    // 更新最后清理时间显示
+    async function updateLastCleanTime() {
+        try {
+            const result = await chrome.storage.local.get(['lastCleanTime']);
+            if (result.lastCleanTime) {
+                const timeStr = formatRelativeTime(result.lastCleanTime);
+                lastCleanDiv.textContent = `上次清理：${timeStr}`;
+            } else {
+                lastCleanDiv.textContent = '尚未进行过清理';
+            }
+        } catch (error) {
+            lastCleanDiv.textContent = '';
+        }
+    }
+
+    // 格式化相对时间
+    function formatRelativeTime(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+        const minutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+        if (minutes < 1) {
+            return '刚刚';
+        } else if (minutes < 60) {
+            return `${minutes}分钟前`;
+        } else if (hours < 24) {
+            return `${hours}小时前`;
+        } else if (days < 7) {
+            return `${days}天前`;
+        } else {
+            const date = new Date(timestamp);
+            return date.toLocaleDateString('zh-CN', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
     }
 });

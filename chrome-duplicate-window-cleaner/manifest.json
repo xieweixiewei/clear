@@ -5,7 +5,8 @@
   "description": "检测并关闭重复的标签页，让你的浏览器更整洁",
   "permissions": [
     "tabs",
-    "windows"
+    "windows",
+    "storage"
   ],
   "action": {
     "default_popup": "popup.html",

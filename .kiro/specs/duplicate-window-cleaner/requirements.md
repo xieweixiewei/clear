@@ -96,3 +96,14 @@
 3. WHEN 显示统计信息 THEN THE System SHALL 清晰地展示当前窗口的标签页数量和重复数量
 4. WHEN 显示操作结果 THEN THE System SHALL 使用不同颜色区分成功和错误状态
 5. WHEN 界面加载 THEN THE System SHALL 显示清晰的操作按钮和说明信息
+
+### 需求 8
+
+**用户故事:** 作为用户，我希望能够看到上一次清理的时间，以便我了解清理的历史记录和使用频率。
+
+#### 验收标准
+
+1. WHEN 用户打开弹出界面 THEN THE System SHALL 显示上一次清理的时间（如果存在）
+2. WHEN 用户完成清理操作 THEN THE System SHALL 记录当前时间作为最后清理时间
+3. WHEN 没有清理历史 THEN THE System SHALL 显示"尚未进行过清理"或类似提示
+4. WHEN 显示清理时间 THEN THE System SHALL 使用用户友好的时间格式（如"2分钟前"、"昨天 14:30"）
