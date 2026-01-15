@@ -65,7 +65,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // 检查最后访问时间
                 const lastAccessTime = tabAccessTimes[tab.id];
-                if (lastAccessTime) {
+                
+                // 如果没有访问记录，说明是旧标签页（扩展安装前就存在的）
+                // 或者有访问记录但超过1天未访问
+                if (!lastAccessTime) {
+                    tabsToClose.push(tab.id);
+                } else {
                     const timeSinceAccess = now - lastAccessTime;
                     if (timeSinceAccess > oneDayInMs) {
                         tabsToClose.push(tab.id);
