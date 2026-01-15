@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resultDiv.style.display = 'none';
 
         try {
-            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+            const oneDayInMs = 1 * 24 * 60 * 60 * 1000; // 改为1天用于测试
             const now = Date.now();
             
             // 获取所有标签页
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const lastAccessTime = tabAccessTimes[tab.id];
                 if (lastAccessTime) {
                     const timeSinceAccess = now - lastAccessTime;
-                    if (timeSinceAccess > sevenDaysInMs) {
+                    if (timeSinceAccess > oneDayInMs) {
                         tabsToClose.push(tab.id);
                     }
                 }
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
-                showResult(`已清理 ${tabsToClose.length} 个7天未访问的标签页`, 'success');
+                showResult(`已清理 ${tabsToClose.length} 个1天未访问的标签页`, 'success');
                 
                 // 记录清理时间
                 await saveLastCleanTime();
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.close();
                 }, 2000);
             } else {
-                showResult('没有发现7天未访问的标签页', 'success');
+                showResult('没有发现1天未访问的标签页', 'success');
             }
             
             updateTabStats();
