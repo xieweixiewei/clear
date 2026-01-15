@@ -74,6 +74,9 @@ interface WindowStats {
 **关键方法**:
 - `cleanTabs(cleanAllWindows)`: 主清理逻辑
 - `cleanWindowTabs(windowId)`: 清理指定窗口的重复标签页
+- `cleanOldTabs(cleanAllWindows)`: 清理超过7天的旧标签页
+- `cleanOldTabsInWindow(windowId)`: 清理指定窗口的旧标签页
+- `isTabOlderThan7Days(tab)`: 判断标签页是否超过7天
 - `updateTabStats()`: 更新标签页统计
 - `updateLastCleanTime()`: 更新上次清理时间显示
 - `saveLastCleanTime()`: 保存清理时间到本地存储
@@ -116,16 +119,89 @@ function identifyDuplicateTabs(tabs) {
 }
 ```
 
-### 3. 后台脚本组件 (Background Script)
+### 3. 旧标签页检测逻辑 (Old Tabs Detection Logic)
 
-**职责**: 最小化的后台服务，仅处理扩展安装事件
+**职责**: 识别7天内未访问的标签页
+
+**算法设计**:
+```javascript
+// 旧标签页识别算法
+function identifyOldTabs(tabs) {
+  const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const tabsToClose = [];
+  
+  for (const tab of tabs) {
+    // 跳过固定标签页
+    if (tab.pinned) continue;
+    
+    // 跳过正在播放音频的标签页
+    if (tab.audible) continue;
+    
+    // 跳过Chrome内部页面
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://')) continue;
+    
+    // 检查标签页最后访问时间
+    // 使用chrome.storage中维护的访问时间记录
+    const lastAccessTime = await getTabLastAccessTime(tab.id);
+    if (lastAccessTime) {
+      const timeSinceAccess = now - lastAccessTime;
+      if (timeSinceAccess > sevenDaysInMs) {
+        tabsToClose.push(tab.id);
+      }
+    }
+  }
+  
+  return tabsToClose;
+}
+```
+
+**技术实现方案**:
+由于Chrome Tabs API不直接提供标签页的最后访问时间，我们需要：
+1. 在后台脚本中监听`chrome.tabs.onActivated`事件
+2. 在后台脚本中监听`chrome.tabs.onCreated`事件
+3. 维护一个标签页ID到最后访问时间的映射表
+4. 将映射表存储在`chrome.storage.local`中以实现持久化
+
+### 4. 后台脚本组件 (Background Script)
+
+**职责**: 最小化的后台服务，跟踪标签页访问时间
 
 **接口**:
 ```javascript
-// 简化的后台脚本
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('扩展已安装');
+// 标签页访问时间跟踪
+chrome.tabs.onCreated.addListener((tab) => {
+  recordTabAccessTime(tab.id);
 });
+
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  recordTabAccessTime(activeInfo.tabId);
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  removeTabAccessTime(tabId);
+});
+
+// 存储和读取访问时间
+async function recordTabAccessTime(tabId) {
+  const data = await chrome.storage.local.get(['tabAccessTimes']);
+  const tabAccessTimes = data.tabAccessTimes || {};
+  tabAccessTimes[tabId] = Date.now();
+  await chrome.storage.local.set({ tabAccessTimes });
+}
+
+async function getTabLastAccessTime(tabId) {
+  const data = await chrome.storage.local.get(['tabAccessTimes']);
+  const tabAccessTimes = data.tabAccessTimes || {};
+  return tabAccessTimes[tabId] || Date.now(); // 如果没有记录，返回当前时间
+}
+
+async function removeTabAccessTime(tabId) {
+  const data = await chrome.storage.local.get(['tabAccessTimes']);
+  const tabAccessTimes = data.tabAccessTimes || {};
+  delete tabAccessTimes[tabId];
+  await chrome.storage.local.set({ tabAccessTimes });
+}
 ```
 
 ## 数据模型
@@ -155,8 +231,12 @@ interface CleanupSession {
 // 存储数据模型
 interface StorageData {
   lastCleanTime: number; // 上次清理时间戳
+  tabAccessTimes: Record<number, number>; // 标签页ID到最后访问时间的映射
 }
 ```
+
+**技术说明**:
+由于Chrome Tabs API不直接提供标签页最后访问时间，我们需要在后台脚本中监听标签页创建和激活事件，并维护一个时间戳映射表。
 
 ## 正确性属性
 
@@ -187,6 +267,14 @@ interface StorageData {
 **属性 6: 清理操作完整性**
 *对于任何* 重复标签页清理操作，系统应该安全关闭所有标记的重复标签页，并返回包含准确统计信息的详细结果
 **验证：需求 3.1, 5.1, 5.2**
+
+**属性 7: 旧标签页识别准确性**
+*对于任何* 标签页集合，当标签页7天内未访问时，系统应该正确识别这些旧标签页
+**验证：需求 9.1, 9.2, 9.3**
+
+**属性 8: 旧标签页保护规则**
+*对于任何* 正在播放音频的标签页、固定标签页或Chrome内部页面，即使7天未访问，系统也应该跳过不进行清理
+**验证：需求 9.4, 9.5, 9.6**
 
 ## 错误处理
 

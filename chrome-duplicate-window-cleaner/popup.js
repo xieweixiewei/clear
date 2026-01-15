@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const cleanCurrentBtn = document.getElementById('cleanCurrentBtn');
     const cleanAllBtn = document.getElementById('cleanAllBtn');
+    const cleanOldTabsBtn = document.getElementById('cleanOldTabsBtn');
     const resultDiv = document.getElementById('result');
     const statsDiv = document.getElementById('stats');
     const lastCleanDiv = document.getElementById('lastClean');
@@ -20,6 +21,90 @@ document.addEventListener('DOMContentLoaded', function() {
     cleanAllBtn.addEventListener('click', async function() {
         await cleanTabs(true);
     });
+
+    // 清理旧标签页按钮
+    cleanOldTabsBtn.addEventListener('click', async function() {
+        await cleanOldTabs();
+    });
+
+    // 清理旧标签页函数
+    async function cleanOldTabs() {
+        cleanCurrentBtn.disabled = true;
+        cleanAllBtn.disabled = true;
+        cleanOldTabsBtn.disabled = true;
+        resultDiv.style.display = 'none';
+
+        try {
+            const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            
+            // 获取所有标签页
+            const allTabs = await chrome.tabs.query({});
+            
+            // 获取标签页访问时间记录
+            const data = await chrome.storage.local.get(['tabAccessTimes']);
+            const tabAccessTimes = data.tabAccessTimes || {};
+            
+            const tabsToClose = [];
+            
+            for (const tab of allTabs) {
+                // 跳过固定标签页
+                if (tab.pinned) {
+                    continue;
+                }
+                
+                // 跳过正在播放音频的标签页
+                if (tab.audible) {
+                    continue;
+                }
+                
+                // 跳过Chrome内部页面
+                if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://')) {
+                    continue;
+                }
+                
+                // 检查最后访问时间
+                const lastAccessTime = tabAccessTimes[tab.id];
+                if (lastAccessTime) {
+                    const timeSinceAccess = now - lastAccessTime;
+                    if (timeSinceAccess > sevenDaysInMs) {
+                        tabsToClose.push(tab.id);
+                    }
+                }
+            }
+            
+            // 关闭旧标签页
+            if (tabsToClose.length > 0) {
+                for (const tabId of tabsToClose) {
+                    try {
+                        await chrome.tabs.remove(tabId);
+                    } catch (error) {
+                        console.warn(`无法关闭标签页 ${tabId}:`, error);
+                    }
+                }
+                
+                showResult(`已清理 ${tabsToClose.length} 个7天未访问的标签页`, 'success');
+                
+                // 记录清理时间
+                await saveLastCleanTime();
+                updateLastCleanTime();
+                
+                setTimeout(() => {
+                    window.close();
+                }, 2000);
+            } else {
+                showResult('没有发现7天未访问的标签页', 'success');
+            }
+            
+            updateTabStats();
+        } catch (error) {
+            showResult('发生错误：' + error.message, 'error');
+        } finally {
+            cleanCurrentBtn.disabled = false;
+            cleanAllBtn.disabled = false;
+            cleanOldTabsBtn.disabled = false;
+        }
+    }
 
     // 清理标签页函数
     async function cleanTabs(cleanAllWindows) {

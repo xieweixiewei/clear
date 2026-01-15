@@ -107,3 +107,18 @@
 2. WHEN 用户完成清理操作 THEN THE System SHALL 记录当前时间作为最后清理时间
 3. WHEN 没有清理历史 THEN THE System SHALL 显示"尚未进行过清理"或类似提示
 4. WHEN 显示清理时间 THEN THE System SHALL 使用用户友好的时间格式（如"2分钟前"、"昨天 14:30"）
+
+### 需求 9
+
+**用户故事:** 作为用户，我希望能够清理7天未访问的旧标签页，以便我可以自动清理长期未使用的标签页，保持浏览器整洁。
+
+#### 验收标准
+
+1. WHEN 用户点击清理旧标签页按钮 THEN THE System SHALL 识别所有7天内未访问的标签页
+2. WHEN 计算标签页访问时间 THEN THE System SHALL 使用标签页的最后访问时间戳与当前时间对比
+3. WHEN 标签页7天内未访问 THEN THE System SHALL 将其标记为待清理
+4. WHEN 标签页正在播放音频 THEN THE System SHALL 跳过该标签页不进行清理
+5. WHEN 标签页是固定标签页 THEN THE System SHALL 跳过该标签页不进行清理
+6. WHEN 标签页是Chrome内部页面 THEN THE System SHALL 跳过这些页面不进行处理
+7. WHEN 清理完成 THEN THE System SHALL 显示清理的旧标签页数量
+8. WHEN 没有发现7天未访问的标签页 THEN THE System SHALL 通知用户没有需要清理的旧标签页
