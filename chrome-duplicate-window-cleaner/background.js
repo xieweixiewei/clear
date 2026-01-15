@@ -5,12 +5,31 @@ console.log('后台脚本启动');
 // 监听扩展安装事件
 chrome.runtime.onInstalled.addListener(() => {
   console.log('扩展已安装');
-  // 不再初始化现有标签页的访问时间
-  // 让现有标签页保持未跟踪状态，这样可以被清理
+  // 初始化现有标签页的访问时间为当前时间
+  initializeExistingTabs();
 });
 
-// 注意：不再初始化现有标签页的访问时间
-// 这样扩展安装前就存在的标签页会被视为"旧标签页"，可以被清理功能识别
+// 初始化现有标签页的访问时间
+async function initializeExistingTabs() {
+  try {
+    const tabs = await chrome.tabs.query({});
+    const now = Date.now();
+    const data = await chrome.storage.local.get(['tabAccessTimes']);
+    const tabAccessTimes = data.tabAccessTimes || {};
+    
+    tabs.forEach(tab => {
+      // 只为还没有记录的标签页设置时间
+      if (!tabAccessTimes[tab.id]) {
+        tabAccessTimes[tab.id] = now;
+      }
+    });
+    
+    await chrome.storage.local.set({ tabAccessTimes });
+    console.log('已初始化现有标签页访问时间');
+  } catch (error) {
+    console.error('初始化标签页访问时间失败:', error);
+  }
+}
 
 // 监听标签页创建事件
 chrome.tabs.onCreated.addListener((tab) => {

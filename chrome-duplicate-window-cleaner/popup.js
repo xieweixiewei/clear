@@ -66,11 +66,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 检查最后访问时间
                 const lastAccessTime = tabAccessTimes[tab.id];
                 
-                // 如果没有访问记录，说明是旧标签页（扩展安装前就存在的）
-                // 或者有访问记录但超过1天未访问
-                if (!lastAccessTime) {
-                    tabsToClose.push(tab.id);
-                } else {
+                // 只清理有访问记录且超过1天未访问的标签页
+                // 没有访问记录的标签页不清理（可能是刚打开或扩展刚重新加载）
+                if (lastAccessTime) {
                     const timeSinceAccess = now - lastAccessTime;
                     if (timeSinceAccess > oneDayInMs) {
                         tabsToClose.push(tab.id);
@@ -78,27 +76,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // 关闭旧标签页
-            if (tabsToClose.length > 0) {
-                try {
-                    // 一次性关闭所有旧标签页
-                    await chrome.tabs.remove(tabsToClose);
-                    showResult(`已清理 ${tabsToClose.length} 个1天未访问的标签页`, 'success');
-                } catch (error) {
-                    console.warn('关闭标签页时出错:', error);
-                    showResult(`清理过程中出现错误：${error.message}`, 'error');
-                }
-                
-                // 记录清理时间
-                await saveLastCleanTime();
-                updateLastCleanTime();
-                
-                setTimeout(() => {
-                    window.close();
-                }, 2000);
-            } else {
+            // 如果没有待清理的标签页，直接提示
+            if (tabsToClose.length === 0) {
                 showResult('没有发现1天未访问的标签页', 'success');
+                cleanCurrentBtn.disabled = false;
+                cleanAllBtn.disabled = false;
+                cleanOldTabsBtn.disabled = false;
+                return;
             }
+            
+            // 显示确认对话框
+            const confirmed = confirm(`发现 ${tabsToClose.length} 个1天未访问的标签页，确定要清理吗？`);
+            
+            if (!confirmed) {
+                showResult('已取消清理操作', 'success');
+                cleanCurrentBtn.disabled = false;
+                cleanAllBtn.disabled = false;
+                cleanOldTabsBtn.disabled = false;
+                return;
+            }
+            
+            // 用户确认后，关闭旧标签页
+            try {
+                // 一次性关闭所有旧标签页
+                await chrome.tabs.remove(tabsToClose);
+                showResult(`已清理 ${tabsToClose.length} 个1天未访问的标签页`, 'success');
+            } catch (error) {
+                console.warn('关闭标签页时出错:', error);
+                showResult(`清理过程中出现错误：${error.message}`, 'error');
+            }
+            
+            // 记录清理时间
+            await saveLastCleanTime();
+            updateLastCleanTime();
+            
+            setTimeout(() => {
+                window.close();
+            }, 2000);
             
             updateTabStats();
         } catch (error) {

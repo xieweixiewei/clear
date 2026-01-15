@@ -122,3 +122,15 @@
 6. WHEN 标签页是Chrome内部页面 THEN THE System SHALL 跳过这些页面不进行处理
 7. WHEN 清理完成 THEN THE System SHALL 显示清理的旧标签页数量
 8. WHEN 没有发现7天未访问的标签页 THEN THE System SHALL 通知用户没有需要清理的旧标签页
+
+### 需求 10
+
+**用户故事:** 作为用户，我希望在清理标签页之前能够看到将要清理的数量并进行确认，以便我可以避免误操作并保持对清理过程的控制。
+
+#### 验收标准
+
+1. WHEN 用户点击清理旧标签页按钮 THEN THE System SHALL 先扫描并统计待清理的标签页数量
+2. WHEN 发现待清理的标签页 THEN THE System SHALL 显示确认提示，告知用户将要清理的标签页数量
+3. WHEN 用户确认清理操作 THEN THE System SHALL 执行清理并关闭标签页
+4. WHEN 用户取消清理操作 THEN THE System SHALL 取消清理并保持所有标签页不变
+5. WHEN 没有发现待清理的标签页 THEN THE System SHALL 直接显示"没有需要清理的标签页"消息
