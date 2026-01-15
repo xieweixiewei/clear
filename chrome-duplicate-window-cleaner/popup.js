@@ -80,15 +80,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 关闭旧标签页
             if (tabsToClose.length > 0) {
-                for (const tabId of tabsToClose) {
-                    try {
-                        await chrome.tabs.remove(tabId);
-                    } catch (error) {
-                        console.warn(`无法关闭标签页 ${tabId}:`, error);
-                    }
+                try {
+                    // 一次性关闭所有旧标签页
+                    await chrome.tabs.remove(tabsToClose);
+                    showResult(`已清理 ${tabsToClose.length} 个1天未访问的标签页`, 'success');
+                } catch (error) {
+                    console.warn('关闭标签页时出错:', error);
+                    showResult(`清理过程中出现错误：${error.message}`, 'error');
                 }
-                
-                showResult(`已清理 ${tabsToClose.length} 个1天未访问的标签页`, 'success');
                 
                 // 记录清理时间
                 await saveLastCleanTime();
