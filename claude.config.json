@@ -1,0 +1,13 @@
+{
+    "env": {
+        "ANTHROPIC_AUTH_TOKEN": "fWZHnpUol87CkWjt8GgQVHCmoCjVATuR",
+        "ANTHROPIC_BASE_URL": "https://antchat.alipay.com/api/anthropic",
+        "ANTHROPIC_MODEL": "Kimi-K2.5",
+        "ANTHROPIC_SMALL_FAST_MODEL": "Kimi-K2-Thinking",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "Kimi-K2-Thinking",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "Kimi-K2-Thinking",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "Kimi-K2-Thinking"
+
+    },
+     "skipWebFetchPreflight": true
+}

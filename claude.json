@@ -1,0 +1,7 @@
+{
+    "hasCompletedOnboarding": true
+}
+
+export ANTHROPIC_AUTH_TOKEN=fWZHnpUol87CkWjt8GgQVHCmoCjVATuR
+export ANTHROPIC_BASE_URL=https://antchat.alipay.com/api/anthropic
+export ANTHROPIC_MODEL=Kimi-K2.5
